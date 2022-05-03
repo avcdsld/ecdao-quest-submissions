@@ -99,6 +99,75 @@ The execution phase uses the transaction's variables to call functions on the ob
 
 Proper use of these phases increases the readability of the transaction code and facilitates static analysis.
 
-### 4. Add updateMyNumber feature
+### 4. Add `updateMyNumber` feature
 
 https://play.onflow.org/213bee4c-9fcf-4bf7-873e-dcbb623be6c5?type=account&id=bfdfeb42-6f20-4329-8148-0e5fb8648626&storage=none
+
+
+## Day3
+
+### 1. In a script, initialize an array (that has length == 3) of your favourite people, represented as `String`s, and `log` it.
+
+```cadence
+pub fun main() {
+  let favoritePeople: [String] = [
+    "Kumagusu Minakata",
+    "Aristotle",
+    "Alexander von Humboldt"
+  ]
+  log(favoritePeople)
+}
+```
+
+### 2. In a script, initialize a dictionary that maps the `String`s Facebook, Instagram, Twitter, YouTube, Reddit, and LinkedIn to a `UInt64` that represents the order in which you use them from most to least. For example, YouTube --> 1, Reddit --> 2, etc. If you've never used one before, map it to 0!
+
+```cadence
+pub fun main() {
+  let servicePriorities: {String: UInt64} = {
+    "Facebook": 6,
+    "Instagram": 3,
+    "Twitter": 1,
+    "YouTube": 2,
+    "Reddit": 4,
+    "LinkedIn": 5
+  }
+  log(servicePriorities)
+}
+```
+
+### 3. Explain what the force unwrap operator `!` does, with an example different from the one I showed you (you can just change the type).
+
+For example, the force unwrap operator is used to cast generic types in Cadence.
+
+```cadence
+pub struct interface BaseStruct {
+}
+
+pub struct Struct1: BaseStruct {
+  pub fun hello1() {
+    log("hello struct 1")
+  }
+}
+
+pub struct Struct2: BaseStruct {
+  pub fun hello2() {
+    log("hello struct 2")
+  }
+}
+
+pub fun main() {
+  let aStruct: AnyStruct{BaseStruct} = Struct1()
+  (aStruct as! Struct1).hello1()
+}
+```
+
+### 4. Using this picture below, explain...
+
+- What the error message means
+  - The return type of the script is expected to be a String, but the current code returns a String? type (an optional type of String), which is not the correct type.
+
+- Why we're getting this error
+  - If a key is specified with a dictionary type, the return value is an optional type. This is because there may be no value at the specified key location.
+
+- How to fix it
+  - Change the return type to `String?` or change the part where the value is taken from the dictionary to `thing[0x01]! ` (To make it safer, use `thing[0x01] ?? ""` is preferred).
