@@ -89,7 +89,7 @@ Because that function performs an operation that changes the state of the blockc
 
 #### 2. What does the `AuthAccount` mean in the `prepare` phase of the transaction?
 
-`AuthAccount` is an object to access the account's storage of the authorizer of a transaction. Using its methods, it is possible to store resource objects and create links to the account's storage.
+`AuthAccount` is an object to access the account's storage of the authorizer of a transaction. Using its methods, it is possible to store/load resource objects and create/remove links to the account's storage.
 
 #### 3. What is the difference between the `prepare` phase and the `execute` phase in the transaction?
 
@@ -273,6 +273,77 @@ import StorageV3 from 0x03
 
 pub fun main(): StorageV3.File? {
   return StorageV3.getFile(path: "/testFile.dat")
+}
+```
+
+
+# [Chapter3](https://github.com/emerald-dao/beginner-cadence-course/tree/main/chapter3.0)
+
+## Day1
+
+#### 1. In words, list 3 reasons why structs are different from resources.
+
+1. Structs can be copied
+2. Structs can be lost (or overwritten)
+3. Structs can be created at anytime, anywhere
+
+#### 2. Describe a situation where a resource might be better to use than a struct.
+
+Resources are ideal if you want to handle valuable NFTs and other items that you don't want accidentally copied or lost in the digital world.
+
+#### 3. What is the keyword to make a new resource?
+
+`create`
+
+#### 4. Can a resource be created in a script or transaction (assuming there isn't a public function to create one)?
+
+No, it is impossible.
+
+#### 5. What is the type of the resource below?
+
+A resource type called `Jacob`
+
+```cadence
+pub resource Jacob {
+
+}
+```
+
+#### 6. Let's play the "I Spy" game from when we were kids. I Spy 4 things wrong with this code. Please fix them.
+
+```cadence
+pub contract Test {
+
+    // Hint: There's nothing wrong here ;)
+    pub resource Jacob {
+        pub let rocks: Bool
+        init() {
+            self.rocks = true
+        }
+    }
+
+    pub fun createJacob(): Jacob { // there is 1 here
+        let myJacob = Jacob() // there are 2 here
+        return myJacob // there is 1 here
+    }
+}
+```
+
+↓
+
+```cadence
+pub contract Test {
+    pub resource Jacob {
+        pub let rocks: Bool
+        init() {
+            self.rocks = true
+        }
+    }
+
+    pub fun createJacob(): @Jacob {
+        let myJacob <- create Jacob()
+        return <- myJacob
+    }
 }
 ```
 
