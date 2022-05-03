@@ -58,3 +58,25 @@ All of these synergies will make the code simpler, safer and more secure. In par
 
 - Developer Experience
   - Developer experience plays a major role in creating code that is maintainable and sustainable over time.
+
+
+# [Chapter2](https://github.com/emerald-dao/beginner-cadence-course/tree/main/chapter2.0)
+
+## Day1
+
+### 1. Deploy a contract to account `0x03` called "JacobTucker". Inside that contract, declare a **constant** variable named `is`, and make it have type `String`. Initialize it to "the best" when your contract gets deployed.
+
+https://play.onflow.org/70008c75-5567-4b28-84b8-1298ac6fb6a1?type=account&id=e95c5ef8-066d-4797-94a3-dfe6f0562449&storage=none
+
+```cadence
+pub contract JacobTucker {
+    pub let is: String
+
+    init() {
+        self.is = "the best"
+    }
+}
+```
+
+### 2. Check that your variable `is` actually equals "the best" by executing a script to read that variable. Include a screenshot of the output.
+<img width="1124" alt="ScreenShot 2022-05-03 16 46 18" src="https://user-images.githubusercontent.com/10495516/166419921-8b27819d-26cb-41cb-a3da-b489d1d0c7f0.png">
