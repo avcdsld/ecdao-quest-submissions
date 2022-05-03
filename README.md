@@ -6,12 +6,12 @@
 
 ### 1. Explain what the Blockchain is in your own words.
 
-ブロックチェーンは、公共の場所に存在する石版のようなもの。
+ブロックチェーンは、公共の場所に存在する石碑のようなもの。
 暗号学的な鍵でアイデンティティを示すことで、誰でも情報を書き込んだり、読むことができる。
 基本的な機能として、誰にいくらを送金するという意思を書き込むことで、送金システムが実現されている。
 また、そこにはコンピュータプログラムも記録することができる。
 
-A blockchain is like a lithography that exists in a public place.
+A blockchain is like a stele that exists in a public place.
 Anyone can write or read the information by indicating their identity with a cryptographic key.
 The basic function of a money transfer system is to write the intention to send money to whom and how much.
 Computer programs can also be recorded there.
