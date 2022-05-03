@@ -24,11 +24,11 @@ According to the rules written there, a wide variety of digital assets and creat
 
 ## 3. Explain the difference between a script and a transaction.
 
-スクリプトは、ブロックチェーンの情報を読み取るためのコード。
-トランザクションは、ブロックチェーンの情報を書き換えてインタラクションするためのコード。
+スクリプトは、ブロックチェーンの情報を読み取るためのコード。無料で実行できる。
+トランザクションは、ブロックチェーンの情報を書き換えてインタラクションするためのコード。こちらは手数料がかかる。
 
-Script is code for reading blockchain information.
-Transaction is the code to rewrite the blockchain information and interact with the blockchain.
+Script is code for reading blockchain information. It can be executed for free.
+Transaction is the code to rewrite the blockchain information and interact with the blockchain. There is a fee for this.
 
 
 # [Day2](https://github.com/emerald-dao/beginner-cadence-course/tree/main/chapter1.0/day2)
