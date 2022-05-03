@@ -164,10 +164,10 @@ pub fun main() {
 ### 4. Using this picture below, explain...
 
 - What the error message means
-  - The return type of the script is expected to be a `String`, but the current code returns a `String?` type (an optional type of `String`), which is not the correct type.
+  - The return type of the script is expected to be a `String`, but the current code returns a `String?` type (an `Optional` type of `String`), which is not the correct type.
 
 - Why we're getting this error
   - If a key is specified with a `Dictionary` type, the return value is an `Optional` type. This is because there may be no value at the specified key location.
 
 - How to fix it
-  - Change the return type to `String?` or change the part where the value is taken from the dictionary to `thing[0x01]! ` (To make it safer, use `thing[0x01] ?? ""` is preferred).
+  - Change the return type to `String?` or change the part where the value is taken from the dictionary to `thing[0x03]!` (To make it safer, use `thing[0x03] ?? ""` is preferred).
