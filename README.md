@@ -347,3 +347,224 @@ pub contract Test {
 }
 ```
 
+## Day2
+
+#### 1. Write your own smart contract that contains two state variables: an array of resources, and a dictionary of resources. Add functions to remove and add to each of them. They must be different from the examples above.
+
+```cadence
+pub contract ResourceHolder {
+    pub let resourceArray: @[SampleResource]
+    pub let resourceDictionary: @{String: SampleResource}
+
+    pub resource SampleResource {
+        pub let name: String
+
+        init(name: String) {
+            self.name = name
+        }
+    }
+
+    pub fun addToArray(name: String) {
+        self.resourceArray.append(<- create SampleResource(name: name))
+    }
+
+    pub fun removeFromArray(index: Int) {
+        let sampleResource <- self.resourceArray.remove(at: index)
+        destroy sampleResource
+    }
+
+    pub fun addToDictionary(name: String) {
+        self.resourceDictionary[name] <-! create SampleResource(name: name)
+    }
+
+    pub fun removeFromDictionary(name: String) {
+        let sampleResource <-  self.resourceDictionary.remove(key: name) ?? panic("Not Found")
+        destroy sampleResource
+    }
+
+    init() {
+        self.resourceArray <- []
+        self.resourceDictionary <- {}
+    }
+}
+```
+
+## Day3
+
+#### 1. Define your own contract that stores a dictionary of resources. Add a function to get a reference to one of the resources in the dictionary.
+
+```cadence
+pub contract ResourceHolder {
+    pub let resources: @{String: SampleResource}
+
+    pub resource SampleResource {
+        pub let name: String
+
+        init(name: String) {
+            self.name = name
+        }
+    }
+
+    pub fun add(name: String) {
+        self.resources[name] <-! create SampleResource(name: name)
+    }
+
+    pub fun remove(name: String) {
+        let sampleResource <-  self.resources.remove(key: name) ?? panic("Not Found")
+        destroy sampleResource
+    }
+
+    pub fun borrow(name: String): &SampleResource {
+        return &self.resources[name] as! &SampleResource
+    }
+
+    init() {
+        self.resources <- {}
+        self.add(name: "test1")
+    }
+}
+```
+
+#### 2. Create a script that reads information from that resource using the reference from the function you defined in part 1.
+
+```cadence
+import ResourceHolder from 0x01
+
+pub fun main(): String {
+  let ref = ResourceHolder.borrow(name: "test1")
+  return ref.name
+}
+```
+
+#### 3. Explain, in your own words, why references can be useful in Cadence.
+
+Because you can call that function without moving the resource itself. This is essential in order to have someone other than yourself call some of the functions of a resource that you have.
+
+
+## Day4
+
+#### 1. Explain, in your own words, the 2 things resource interfaces can be used for (we went over both in today's content)
+
+1. To allow resources/structures with common necessary functions to be generalized and handled together.
+
+2. Use it to expose only some functions of your resources to others.
+
+#### 2. Define your own contract. Make your own resource interface and a resource that implements the interface. Create 2 functions. In the 1st function, show an example of not restricting the type of the resource and accessing its content. In the 2nd function, show an example of restricting the type of the resource and NOT being able to access its content.
+
+```cadence
+pub contract ResourceHolder {
+    access(contract) var memo: @Memo
+
+    pub resource interface MemoPublic {
+        pub fun read(): String
+    }
+
+    pub resource Memo: MemoPublic {
+        pub let name: String
+        access(self) var content: String
+
+        pub fun read(): String {
+            return self.content
+        }
+
+        pub fun rewrite(content: String) {
+            self.content = content
+        }
+
+        init(name: String, content: String) {
+            self.name = name
+            self.content = content
+        }
+    }
+
+    pub fun rewriteMemo(content: String) {
+        let ref = &self.memo as! &Memo
+        ref.rewrite(content: content)
+    }
+
+    pub fun readMemo(): String {
+         let ref = &self.memo as! &AnyResource{MemoPublic}
+         return ref.read()
+    }
+
+    init() {
+        self.memo <- create Memo(name: "test name", content: "test content")
+    }
+}
+```
+
+#### 3. How would we fix this code?
+
+```cadence
+pub contract Stuff {
+
+    pub struct interface ITest {
+      pub var greeting: String
+      pub var favouriteFruit: String
+    }
+
+    // ERROR:
+    // `structure Stuff.Test does not conform 
+    // to structure interface Stuff.ITest`
+    pub struct Test: ITest {
+      pub var greeting: String
+
+      pub fun changeGreeting(newGreeting: String): String {
+        self.greeting = newGreeting
+        return self.greeting // returns the new greeting
+      }
+
+      init() {
+        self.greeting = "Hello!"
+      }
+    }
+
+    pub fun fixThis() {
+      let test: Test{ITest} = Test()
+      let newGreeting = test.changeGreeting(newGreeting: "Bonjour!") // ERROR HERE: `member of restricted type is not accessible: changeGreeting`
+      log(newGreeting)
+    }
+}
+```
+
+↓
+
+```cadence
+pub contract Stuff {
+
+    pub struct interface ITest {
+      pub var greeting: String
+      pub var favouriteFruit: String
+      pub fun changeGreeting(newGreeting: String): String // **Added**
+      pub fun changeFavouriteFruit(favouriteFruit: String): String // **Added** MEMO: Not essential, but I'd like to include this one.
+    }
+
+    pub struct Test: ITest {
+      pub var greeting: String
+      pub var favouriteFruit: String // **Added**
+
+      pub fun changeGreeting(newGreeting: String): String {
+        self.greeting = newGreeting
+        return self.greeting // returns the new greeting
+      }
+
+      // **Added** MEMO: Not essential, but I'd like to define this one.
+      pub fun changeFavouriteFruit(favouriteFruit: String): String {
+        self.favouriteFruit = favouriteFruit
+        return self.favouriteFruit // returns the new favouriteFruit
+      }
+
+      init() {
+        self.greeting = "Hello!"
+        self.favouriteFruit = "Apple" // **Added**
+      }
+    }
+
+    pub fun fixThis() {
+      let test: Test{ITest} = Test()
+      let newGreeting = test.changeGreeting(newGreeting: "Bonjour!")
+      log(newGreeting)
+    }
+}
+```
+
