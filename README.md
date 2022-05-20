@@ -568,3 +568,22 @@ pub contract Stuff {
 }
 ```
 
+## Day5
+
+#### In each AREA (1, 2, 3, and 4), I want you to do the following: for each variable (a, b, c, and d), tell me in which areas they can be read (read scope) and which areas they can be modified (write scope). For each function (publicFunc, contractFunc, and privateFunc), simply tell me where they can be called.
+
+- read scope
+  - a: AREA 1, 2, 3 and 4
+  - b: AREA 1, 2, 3 and 4
+  - c: AREA 1, 2 and 3
+  - d: AREA 1
+
+- write scope
+  - a: AREA 1, 2, 3 and 4
+  - b: AREA 1
+  - c: AREA 1
+  - d: AREA 1
+
+- publicFunc: AREA 1, 2, 3 and 4
+- contractFunc: AREA 1, 2 and 3
+- privateFunc: AREA 1
