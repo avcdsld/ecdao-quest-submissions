@@ -954,7 +954,7 @@ https://play.onflow.org/69197e84-cea8-4b43-885b-f382bb2b9742?type=account&id=9f3
 
 #### 1. Explain why standards can be beneficial to the Flow ecosystem.
 
-Various contracts (that may not even exist in the world yet!) can all be treated in the same way and generic code can be written. If everyone follows the standard, we can develop the ecosystem very efficiently.
+Various contracts (that may not even exist in the world yet!) can all be treated in the same way and generic code can be written. If everyone follows the standard, we can develop the ecosystem very efficiently. Especially in the case of the Flow standard, the use of pre/post conditions makes it very secure because its behavior is guaranteed at the level of the language specification.
 
 #### 2. What is YOUR favourite food?
 
@@ -988,3 +988,171 @@ pub contract Test: ITest { // Specify that ITest is implemented.
   }
 }
 ```
+
+
+## Day3
+
+#### 1. What does "force casting" with `as!` do? Why is it useful in our Collection?
+
+It means that an object of a generic type is treated as an object of the specific type that implements it. If the actual type is different, an error will result. If you follow the NFT standard but create your own fields or functions, it is easier to call them if you cast them when using their unique functions.
+
+#### 2. What does `auth` do? When do we use it?
+
+There are two types of casting of type: upcasting and downcasting. Normally, only upcasting is possible. If downcasting is desired, the type must be declared with this `auth` modifier. We use this, for example, when we want to downcast to a specific NFT's dedicated type.
+
+#### 3. add a function called `borrowAuthNFT` just like we did in the section called "The Problem" above. Then, find a way to make it publically accessible to other people so they can read our NFT's metadata. Then, run a script to display the NFTs metadata for a certain `id`.
+
+https://play.onflow.org/406b7182-bbbf-4085-a040-df17524a45ea?type=account&id=3719d1c2-1b89-47d0-8b82-b099494cb9c6&storage=none
+
+Contract:
+
+```cadence
+import NonFungibleToken from 0x02
+
+pub contract CryptoPoops: NonFungibleToken {
+  pub var totalSupply: UInt64
+
+  pub event ContractInitialized()
+  pub event Withdraw(id: UInt64, from: Address?)
+  pub event Deposit(id: UInt64, to: Address?)
+
+  pub resource NFT: NonFungibleToken.INFT {
+    pub let id: UInt64
+
+    pub let name: String
+    pub let favouriteFood: String
+    pub let luckyNumber: Int
+
+    init(_name: String, _favouriteFood: String, _luckyNumber: Int) {
+      self.id = self.uuid
+
+      self.name = _name
+      self.favouriteFood = _favouriteFood
+      self.luckyNumber = _luckyNumber
+    }
+  }
+
+  // Added
+  pub resource interface CollectionPublic {
+    pub fun deposit(token: @NonFungibleToken.NFT)
+    pub fun getIDs(): [UInt64]
+    pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
+    pub fun borrowAuthNFT(id: UInt64): &NFT
+  }
+
+  pub resource Collection: NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, CollectionPublic {
+    pub var ownedNFTs: @{UInt64: NonFungibleToken.NFT}
+
+    pub fun withdraw(withdrawID: UInt64): @NonFungibleToken.NFT {
+      let nft <- self.ownedNFTs.remove(key: withdrawID) 
+            ?? panic("This NFT does not exist in this Collection.")
+      emit Withdraw(id: nft.id, from: self.owner?.address)
+      return <- nft
+    }
+
+    pub fun deposit(token: @NonFungibleToken.NFT) {
+      let nft <- token as! @NFT
+      emit Deposit(id: nft.id, to: self.owner?.address)
+      self.ownedNFTs[nft.id] <-! nft
+    }
+
+    pub fun getIDs(): [UInt64] {
+      return self.ownedNFTs.keys
+    }
+
+    pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT {
+      return &self.ownedNFTs[id] as &NonFungibleToken.NFT
+    }
+
+    // Added
+    pub fun borrowAuthNFT(id: UInt64): &NFT {
+      let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
+      return ref as! &NFT
+    }
+
+    init() {
+      self.ownedNFTs <- {}
+    }
+
+    destroy() {
+      destroy self.ownedNFTs
+    }
+  }
+
+  pub fun createEmptyCollection(): @NonFungibleToken.Collection {
+    return <- create Collection()
+  }
+
+  pub resource Minter {
+
+    pub fun createNFT(name: String, favouriteFood: String, luckyNumber: Int): @NFT {
+      return <- create NFT(_name: name, _favouriteFood: favouriteFood, _luckyNumber: luckyNumber)
+    }
+
+    pub fun createMinter(): @Minter {
+      return <- create Minter()
+    }
+
+  }
+
+  init() {
+    self.totalSupply = 0
+    emit ContractInitialized()
+    self.account.save(<- create Minter(), to: /storage/Minter)
+  }
+}
+```
+
+Transaction (Sender=0x01):
+
+```cadence
+import NonFungibleToken from 0x02
+import CryptoPoops from 0x01
+
+transaction {
+  prepare(signer: AuthAccount) {
+    let collection <- CryptoPoops.createEmptyCollection()
+    let collectionRef = &collection as &NonFungibleToken.Collection
+    signer.save(<- collection, to: /storage/CryptoPoopsCollection)
+    signer.link<&CryptoPoops.Collection{CryptoPoops.CollectionPublic}>(/public/CryptoPoopsCollection, target: /storage/CryptoPoopsCollection)
+
+    let minterRef = signer.borrow<&CryptoPoops.Minter>(from: /storage/Minter)!
+    let nft <- minterRef.createNFT(name: "test1", favouriteFood: "avocado", luckyNumber: 8)
+    collectionRef.deposit(token: <-nft)
+  }
+}
+```
+
+Script:
+```cadence
+import NonFungibleToken from 0x02
+import CryptoPoops from 0x01
+
+pub struct NFTMetadata {
+    pub let name: String
+    pub let favouriteFood: String
+    pub let luckyNumber: Int
+
+    init(name: String, favouriteFood: String, luckyNumber: Int) {
+      self.name = name
+      self.favouriteFood = favouriteFood
+      self.luckyNumber = luckyNumber
+    }
+}
+
+pub fun main(): NFTMetadata {
+  let collectionRef = getAccount(0x01)
+                  .getCapability<&AnyResource{CryptoPoops.CollectionPublic}>(/public/CryptoPoopsCollection)
+                  .borrow() ?? panic("Not Found")
+  let ids = collectionRef.getIDs()
+  let id = ids[0]
+  let nftRef = collectionRef.borrowAuthNFT(id: id)
+  return NFTMetadata(
+    name: nftRef.name,
+    favouriteFood: nftRef.favouriteFood,
+    luckyNumber: nftRef.luckyNumber,
+  )
+}
+```
+
+The End!!
