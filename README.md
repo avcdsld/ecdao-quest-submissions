@@ -881,3 +881,70 @@ pub contract CryptoPoops {
 }
 ```
 
+
+# [Chapter5](https://github.com/emerald-dao/beginner-cadence-course/tree/main/chapter5.0)
+
+## Day1
+
+#### 1. Describe what an event is, and why it might be useful to a client.
+
+An event is a permanent record of what happened at a point in time on the blockchain. By having clients monitor events, they can be sure to know what happened on the blockchain, along with a timeline of information.
+
+#### 2. Deploy a contract with an event in it, and emit the event somewhere else in the contract indicating that it happened.
+
+https://play.onflow.org/7a7233bf-c64a-44a0-8920-5c84762b7290?type=account&id=70a0929b-a455-41c7-b5be-80dfa4ef7a27&storage=none
+
+```cadence
+pub contract MemoContract {
+    pub event MemoCreated(content: String)
+    
+    pub resource Memo {
+        pub var content: String
+
+        init(content: String) {
+            self.content = content
+        }
+    }
+
+    pub fun createMemo(content: String): @Memo {
+        emit MemoCreated(content: content)
+        return <- create Memo(content: content)
+    }
+
+    init() {}
+}
+```
+
+```cadence
+import MemoContract from 0x01
+
+transaction {
+  prepare(acct: AuthAccount) {
+    let memo <- MemoContract.createMemo(content: "test")
+    destroy memo
+  }
+}
+```
+
+#### 3. Using the contract in step 2), add some pre conditions and post conditions to your contract to get used to writing them out.
+
+https://play.onflow.org/69197e84-cea8-4b43-885b-f382bb2b9742?type=account&id=9f347923-fe44-4ad6-b69e-98d7360e697a&storage=none
+
+```cadence
+    pub fun createMemo(content: String): @Memo {
+        pre {
+            content != "": "Empty content"
+        }
+        post {
+            result.content == content: "Not match content"
+        }
+        emit MemoCreated(content: content)
+        return <- create Memo(content: content)
+    }
+```
+
+#### 4. For each of the functions below (numberOne, numberTwo, numberThree), follow the instructions.
+
+- numberOne: This function will log the name because "Jacob" is 5 characters long and meets the pre condition.
+- numberTwo: This function will return a value because "Jacob" is greater than or equal to zero characters and satisfies the pre condition, and the return value with the addition of " Tucker" satisfies the post condition as well.
+- numberThree: This function will NOT log the updated number because `number` plus `1` is the `result`, and furthermore, the `result` plus `1` does not match the original `number`. The `self.number` remains `0`.
