@@ -587,3 +587,177 @@ pub contract Stuff {
 - publicFunc: AREA 1, 2, 3 and 4
 - contractFunc: AREA 1, 2 and 3
 - privateFunc: AREA 1
+
+
+# [Chapter4](https://github.com/emerald-dao/beginner-cadence-course/tree/main/chapter4.0)
+
+## Day1
+
+#### 1. Explain what lives inside of an account.
+
+Within an account, there is a contract code area and an account storage area. The contract code area contains the code of the contracts deployed by the account. Account Storage can be stored objects such as resources and the link for them.
+
+#### 2. What is the difference between the `/storage/`, `/public/`, and `/private/` paths?
+
+The `/storage/` path can be stored the object itself, such as a resource.
+
+The `/public/` paths can be stored links to resource objects stored in the storage path, which can be accessed by anyone.
+
+The `/private/` path can also be stored links to resource objects, but these cannot be accessed by anyone.
+
+#### 3. What does `.save()` do? What does `.load()` do? What does `.borrow()` do?
+
+save() saves an object to your account storage.
+
+load() retrieves an object from one's account.
+
+borrow() gets a reference to an object from your account.
+
+#### 4. Explain why we couldn't save something to our account storage inside of a script.
+
+Because scripts do not require the executor's signature and it is not possible to guarantee who executed them. Also, there is no mechanism to prevent multiple executions.
+
+#### 5. Explain why I couldn't save something to your account.
+
+In Flow, the presence of a resource in account storage means that it is owned. Therefore, other people's belongings cannot be tampered with without their permission.
+
+#### 6. Define a contract that returns a resource that has at least 1 field in it. Then, write 2 transactions:
+
+https://play.onflow.org/14705377-4ae2-4d4c-8a06-a3b3f1ef468f?type=account&id=084d637e-18c2-4c6b-9643-d967b0979182&storage=none
+
+```cadence
+pub contract MemoContract {
+    pub resource Memo {
+        pub var content: String
+
+        init(content: String) {
+            self.content = content
+        }
+    }
+
+    pub fun createMemo(content: String): @Memo {
+        return <- create Memo(content: content)
+    }
+
+    init() {
+    }
+}
+```
+
+i. A transaction that first saves the resource to account storage, then loads it out of account storage, logs a field inside the resource, and destroys it.
+
+```cadence
+import MemoContract from 0x01
+
+transaction {
+  prepare(signer: AuthAccount) {
+    let memo <- MemoContract.createMemo(content: "test memo")
+    signer.save(<- memo, to: /storage/Memo)
+    let memoLoaded <- signer.load<@MemoContract.Memo>(from: /storage/Memo)!
+    log(memoLoaded.content)
+    destroy memoLoaded
+  }
+}
+```
+
+ii. A transaction that first saves the resource to account storage, then borrows a reference to it, and logs a field inside the resource.
+
+```cadence
+import MemoContract from 0x01
+
+transaction {
+  prepare(signer: AuthAccount) {
+    let memo <- MemoContract.createMemo(content: "test memo 2")
+    signer.save(<- memo, to: /storage/Memo2)
+    let memoRef = signer.borrow<&MemoContract.Memo>(from: /storage/Memo2)!
+    log(memoRef.content)
+  }
+}
+```
+
+## Day2
+
+#### 1. What does .link() do?
+
+Create a link to a resource object you own that others can call only on a specific interface.
+
+#### 2. In your own words (no code), explain how we can use resource interfaces to only expose certain things to the `/public/` path.
+
+First, create a resource interface that contains only the functions/fields you want to expose. Then, create a resource that implements it. Functions that only you want to perform can call the functions/fields of the resource using the type of the resource as it is. For functions that you want others to perform, specify the resource interface, create a link, and have them use it.
+
+#### 3. Deploy a contract that contains a resource that implements a resource interface. Then, do the following:
+
+https://play.onflow.org/592ae5d6-1940-4db5-b294-06e100097e55?type=account&id=33bdf6e5-6f2a-4b72-b2d3-cde4c0e3f096&storage=none
+
+```cadence
+pub contract MemoContract {
+    pub resource interface MemoPublic {
+        pub var content: String
+    }
+
+    pub resource Memo: MemoPublic {
+        pub var content: String
+        pub var privateContent: String // but actually this is no private in blockchain
+
+        pub fun updateContent(content: String, privateContent: String) {
+            self.content = content
+            self.privateContent = privateContent
+        }
+
+        init(content: String, privateContent: String) {
+            self.content = content
+            self.privateContent = privateContent
+        }
+    }
+
+    pub fun createMemo(content: String, privateContent: String): @Memo {
+        return <- create Memo(content: content, privateContent: privateContent)
+    }
+
+    init() {}
+}
+```
+
+i. In a transaction, save the resource to storage and link it to the public with the restrictive interface.
+
+```cadence
+import MemoContract from 0x01
+
+transaction {
+  prepare(signer: AuthAccount) {
+    let memo <- MemoContract.createMemo(content: "test memo", privateContent: "test private memo")
+    signer.save(<- memo, to: /storage/Memo)
+    signer.link<&MemoContract.Memo{MemoContract.MemoPublic}>(/public/Memo, target: /storage/Memo)
+  }
+}
+```
+
+ii. Run a script that tries to access a non-exposed field in the resource interface, and see the error pop up.
+
+<img width="829" alt="ScreenShot 2022-05-21 16 23 03" src="https://user-images.githubusercontent.com/10495516/169640802-54b68b8d-a53a-41fd-b87d-ba4856197647.png">
+
+```cadence
+import MemoContract from 0x01
+
+pub fun main(): String {
+  let memoRef = getAccount(0x01)
+                  .getCapability<&AnyResource{MemoContract.MemoPublic}>(/public/Memo)
+                  .borrow() ?? panic("Not Found")
+  return memoRef.privateContent
+}
+```
+
+iii. Run the script and access something you CAN read from. Return it from the script.
+
+```cadence
+import MemoContract from 0x01
+
+pub fun main(): String {
+  let memoRef = getAccount(0x01)
+                  .getCapability<&AnyResource{MemoContract.MemoPublic}>(/public/Memo)
+                  .borrow() ?? panic("Not Found")
+  log(memoRef.content)
+  return memoRef.content
+}
+```
+
