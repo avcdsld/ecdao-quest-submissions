@@ -782,3 +782,102 @@ A storage-consuming attack vector arises in which a large number of NFTs are min
 - Idea #2: If we want to read information about our NFTs inside our Collection, right now we have to take it out of the Collection to do so. Is this good?
 
 This is an operation that can only be performed by the owner of the NFT, and it also unnecessarily increases the computation of the transaction. It is better to create a function to read the NFT information.
+
+
+## Day4
+
+#### Take our NFT contract so far and add comments to every single resource or function explaining what it's doing in your own words.
+
+```cadence
+pub contract CryptoPoops {
+  pub var totalSupply: UInt64
+
+  // This is an NFT resource that contains a name, favouriteFood, and luckyNumber
+  pub resource NFT {
+    pub let id: UInt64
+
+    pub let name: String
+    pub let favouriteFood: String
+    pub let luckyNumber: Int
+
+    // In initializers, all variables must be explicitly populated with initial values.
+    init(_name: String, _favouriteFood: String, _luckyNumber: Int) {
+      self.id = self.uuid
+
+      self.name = _name
+      self.favouriteFood = _favouriteFood
+      self.luckyNumber = _luckyNumber
+    }
+  }
+
+  // This is a resource interface that allows us to deposit, getIDs and borrowNFT in the Collection.
+  pub resource interface CollectionPublic {
+    pub fun deposit(token: @NFT)
+    pub fun getIDs(): [UInt64]
+    pub fun borrowNFT(id: UInt64): &NFT
+  }
+
+  // This is a resource for storing NFTs; it provides the ability to deposit and withdraw NFTs.
+  // It implements the CollectionPublic interface for others to use.
+  pub resource Collection: CollectionPublic {
+    pub var ownedNFTs: @{UInt64: NFT}
+
+    // Function to store the NFT in the dictionary that the collection has
+    pub fun deposit(token: @NFT) {
+      self.ownedNFTs[token.id] <-! token
+    }
+
+    // Function to remove NFTs from the dictionaries that the collection has
+    pub fun withdraw(withdrawID: UInt64): @NFT {
+      let nft <- self.ownedNFTs.remove(key: withdrawID) 
+              ?? panic("This NFT does not exist in this Collection.")
+      return <- nft
+    }
+
+    // Function to get a list of IDs of NFTs that the collection has
+    pub fun getIDs(): [UInt64] {
+      return self.ownedNFTs.keys
+    }
+
+    // Function to get a reference to read the NFT information the collection has
+    pub fun borrowNFT(id: UInt64): &NFT {
+      return &self.ownedNFTs[id] as &NFT
+    }
+
+    // In initializers, all variables must be explicitly populated with initial values.
+    init() {
+      self.ownedNFTs <- {}
+    }
+
+    // In the case of a resource that has resources, the behavior when it itself is destroyed must be explicitly written.
+    destroy() {
+      destroy self.ownedNFTs
+    }
+  }
+
+  // Function to create an empty Collection so that you can have an NFT
+  pub fun createEmptyCollection(): @Collection {
+    return <- create Collection()
+  }
+
+  // Only those who have this resource can mint NFTs. It is first stored in the storage of the account that deployed the contract.
+  pub resource Minter {
+    // Functions for creating NFT resource objects (minting a NFT)
+    pub fun createNFT(name: String, favouriteFood: String, luckyNumber: Int): @NFT {
+      return <- create NFT(_name: name, _favouriteFood: favouriteFood, _luckyNumber: luckyNumber)
+    }
+
+    // Those who have a Minter resource object can also create a new Minter resource object and pass it on to other accounts.
+    pub fun createMinter(): @Minter {
+      return <- create Minter()
+    }
+  }
+
+  // In the initializer of the contract, all contract variables must be initialized.
+  init() {
+    self.totalSupply = 0
+    self.account.save(<- create Minter(), to: /storage/Minter)
+  }
+}
+```
+
