@@ -761,3 +761,24 @@ pub fun main(): String {
 }
 ```
 
+
+## Day3
+
+#### 1. Why did we add a Collection to this contract? List the two main reasons.
+
+1. To store multiple NFTs
+2. To allow others to deposit NFTs
+
+#### 2. What do you have to do if you have resources "nested" inside of another resource? ("Nested resources")
+
+We must decide what to do with the child resource (destroy it or move it elsewhere) when the parent resource is destroyed.
+
+#### 3. Brainstorm some extra things we may want to add to this contract. Think about what might be problematic with this contract and how we could fix it.
+
+- Idea #1: Do we really want everyone to be able to mint an NFT? 🤔.
+
+A storage-consuming attack vector arises in which a large number of NFTs are minted and deposited into someone's collection. This may be mitigated by setting a mint limit, but it is not perfect.
+
+- Idea #2: If we want to read information about our NFTs inside our Collection, right now we have to take it out of the Collection to do so. Is this good?
+
+This is an operation that can only be performed by the owner of the NFT, and it also unnecessarily increases the computation of the transaction. It is better to create a function to read the NFT information.
