@@ -948,3 +948,43 @@ https://play.onflow.org/69197e84-cea8-4b43-885b-f382bb2b9742?type=account&id=9f3
 - numberOne: This function will log the name because "Jacob" is 5 characters long and meets the pre condition.
 - numberTwo: This function will return a value because "Jacob" is greater than or equal to zero characters and satisfies the pre condition, and the return value with the addition of " Tucker" satisfies the post condition as well.
 - numberThree: This function will NOT log the updated number because `number` plus `1` is the `result`, and furthermore, the `result` plus `1` does not match the original `number`. The `self.number` remains `0`.
+
+
+## Day2
+
+#### 1. Explain why standards can be beneficial to the Flow ecosystem.
+
+Various contracts (that may not even exist in the world yet!) can all be treated in the same way and generic code can be written. If everyone follows the standard, we can develop the ecosystem very efficiently.
+
+#### 2. What is YOUR favourite food?
+
+Avocado
+
+#### 3. Please fix this code (Hint: There are two things wrong):
+
+```cadence
+pub contract Test: ITest { // Specify that ITest is implemented.
+  pub var number: Int
+  
+  pub fun updateNumber(newNumber: Int) {
+    self.number = newNumber // To satisfy the post condition in any case, `self.number` must be the same as the argument
+  }
+
+  // This definition is unnecessary.
+  // pub resource interface IStuff {
+  //   pub var favouriteActivity: String
+  // }
+
+  pub resource Stuff: ITest.IStuff { // Must implement ITest's IStuff, not your own defined IStuff
+    pub var favouriteActivity: String
+
+    init() {
+      self.favouriteActivity = "Playing League of Legends."
+    }
+  }
+
+  init() {
+    self.number = 0
+  }
+}
+```
